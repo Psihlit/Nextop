@@ -138,6 +138,7 @@ async def add_order(new_order: OrderCreate, session: AsyncSession = Depends(get_
         await session.commit()
         return {
             "status": "success",
+            "status_code": "200",
             "data": None,
             "details": None
         }
@@ -152,14 +153,14 @@ async def add_order(new_order: OrderCreate, session: AsyncSession = Depends(get_
             })
 
         elif 'INSERT или UPDATE в таблице "order" нарушает ограничение внешнего ключа "order_status_id_fkey"' in str(e):
-            raise HTTPException(status_code=400, detail={
+            raise HTTPException(status_code=404, detail={
                 "status": "error",
                 "data": None,
                 "details": f"Статуса заказа с идентификатором {new_order.status_id} не существует.",
             })
 
         elif 'INSERT или UPDATE в таблице "order" нарушает ограничение внешнего ключа "order_user_id_fkey"' in str(e):
-            raise HTTPException(status_code=400, detail={
+            raise HTTPException(status_code=404, detail={
                 "status": "error",
                 "data": None,
                 "details": f"Пользователь с идентификатором {new_order.user_id} не существует.",
@@ -169,7 +170,7 @@ async def add_order(new_order: OrderCreate, session: AsyncSession = Depends(get_
             raise HTTPException(status_code=500, detail={
                 "status": "error",
                 "data": None,
-                "details": "Произошла ошибка при создании заказа.",
+                "details": f"Произошла ошибка при создании заказа: {str(e)}",
             })
 
 
@@ -192,20 +193,21 @@ async def update_order(order_id: int, updated_order: OrderUpdate, session: Async
         await session.commit()
         return {
             "status": "success",
+            "status_code": "200",
             "data": None,
             "details": None
         }
 
     except IntegrityError as e:
         if 'INSERT или UPDATE в таблице "order" нарушает ограничение внешнего ключа "order_status_id_fkey"' in str(e):
-            raise HTTPException(status_code=400, detail={
+            raise HTTPException(status_code=404, detail={
                 "status": "error",
                 "data": None,
                 "details": f"Статуса заказа с идентификатором {updated_order.status_id} не существует.",
             })
 
         elif 'INSERT или UPDATE в таблице "order" нарушает ограничение внешнего ключа "order_user_id_fkey"' in str(e):
-            raise HTTPException(status_code=400, detail={
+            raise HTTPException(status_code=404, detail={
                 "status": "error",
                 "data": None,
                 "details": f"Пользователь с идентификатором {updated_order.user_id} не существует.",
@@ -247,7 +249,6 @@ async def delete_order(order_id: int, session: AsyncSession = Depends(get_async_
     except Exception as e:
         raise HTTPException(status_code=500, detail={
             "status": "error",
-            "status_code": "500",
             "data": None,
             "details": f"Произошла ошибка при удалении заказа с идентификатором {order_id}. {str(e)}",
         })
