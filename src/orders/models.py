@@ -1,15 +1,9 @@
 from sqlalchemy import Table, Column, Integer, String, ForeignKey, MetaData, Float
 
 from src.auth.models import user
+from src.order_types.models import order_status
 
 metadata = MetaData()
-
-order_status = Table(
-    "order_status",
-    metadata,
-    Column("id", Integer, primary_key=True),
-    Column("status", String, nullable=False),
-)
 
 order = Table(
     "order",
@@ -23,6 +17,3 @@ order = Table(
     # Column("dispatcher_id", Integer, ForeignKey(dispatcher.c.id)),
     # Column("driver_id", Integer, ForeignKey(driver.c.id))
 )
-
-
-
