@@ -16,9 +16,8 @@ class ResponseModel(BaseModel):
 
 
 class OrderTypeCreate(BaseModel):
-    id: int
-    status: str
+    status: Optional[str] = Field(default="new status")
 
 
 class OrderTypeUpdate(BaseModel):
-    status: str
+    status: Optional[str] = Field(default="new status")

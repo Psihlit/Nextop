@@ -16,51 +16,47 @@ router = APIRouter(
 )
 
 
-@router.get('/get_all_orders', response_model=ResponseModel)
-async def get_all_orders(start: Optional[int] = Query(default=1, gt=0), end: Optional[int] = Query(default=10, gt=0),
-                         session: AsyncSession = Depends(get_async_session)):
-    if start > end:
-        start, end = end, start
-
-    start -= 1  # Преобразуем ввод пользователя, чтобы начало считалось с 0
-    end -= start  # Вычисляем разницу между конечным и начальным индексами
+@router.get("", response_model=ResponseModel)
+async def get_orders_with_filtration(start: Optional[int] = Query(default=0, ge=0),
+                                     step: Optional[int] = Query(default=10, gt=0),
+                                     order_id: Optional[int] = None,
+                                     user_id: Optional[int] = None,
+                                     status_id: Optional[int] = None,
+                                     session: AsyncSession = Depends(get_async_session)):
+    """
+    :param start: переменная, отвечающая с какой записи отсчитывать вывод\n
+    :param step: шаг вывода\n
+    :param order_id: id заказа\n
+    :param user_id: id пользователя\n
+    :param status_id: id статуса заказа\n
+    :param session:\n
+    :return:
+    """
 
     try:
-        query = select(order).offset(start).limit(end)
-        print(query)
-        result = await session.execute(query)
-        return {
-            "status": "success",
-            "status_code": "200",
-            "data": result.all(),
-            "details": None
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail={
-            "status": "error",
-            "data": None,
-            "details": f"{str(e)}"
-        })
+        query = select(order)
 
+        if order_id:
+            query = query.where(order.c.id == order_id)
+        if user_id:
+            query = query.where(order.c.user_id == user_id)
+        if status_id:
+            query = query.where(order.c.status_id == status_id)
 
-@router.get('/get_order_by_id/{order_id}', response_model=ResponseModel)
-async def get_orders_by_id(order_id: int, session: AsyncSession = Depends(get_async_session)):
-    try:
-        query = select(order).where(order.c.id == order_id)
-        result = await session.execute(query)
-        result = result.first()
+        result = await session.execute(query.offset(start).limit(step))
+        orders = result.all()
 
-        if result is None:
+        if not orders:
             raise HTTPException(status_code=404, detail={
                 "status": "error",
                 "data": None,
-                "details": f"Заказа с идентификатором {order_id} не существует"
+                "details": f"Заказов по заданным критериям не найдено."
             })
 
         return {
             "status": "success",
             "status_code": "200",
-            "data": [result],
+            "data": orders,
             "details": None
         }
 
@@ -72,66 +68,14 @@ async def get_orders_by_id(order_id: int, session: AsyncSession = Depends(get_as
         })
 
 
-@router.get('/get_order_by_user_id/{user_id}', response_model=ResponseModel)
-async def get_orders_by_user_id(user_id: int, session: AsyncSession = Depends(get_async_session)):
-    try:
-        query = select(order).where(order.c.user_id == user_id)
-        result = await session.execute(query)
-        result = result.fetchall()
-
-        if not result:
-            raise HTTPException(status_code=404, detail={
-                "status": "error",
-                "data": None,
-                "details": f"Заказов пользователя с идентификатором {user_id} не существует."
-            })
-
-        return {
-            "status": "success",
-            "status_code": "200",
-            "data": result,
-            "details": None
-        }
-
-    except Exception as e:
-        raise HTTPException(status_code=500, detail={
-            "status": "error",
-            "data": None,
-            "details": f"{str(e)}"
-        })
-
-
-@router.get('/get_order_by_status_id/{status_id}', response_model=ResponseModel)
-async def get_orders_by_status_id(status_id: int, session: AsyncSession = Depends(get_async_session)):
-    try:
-        query = select(order).where(order.c.status_id == status_id)
-        result = await session.execute(query)
-        result = result.fetchall()
-
-        if not result:
-            raise HTTPException(status_code=404, detail={
-                "status": "error",
-                "data": None,
-                "details": f"Заказов с идентификатором статуса {status_id} не существует."
-            })
-
-        return {
-            "status": "success",
-            "status_code": "200",
-            "data": result,
-            "details": None
-        }
-
-    except Exception as e:
-        raise HTTPException(status_code=500, detail={
-            "status": "error",
-            "data": None,
-            "details": f"{str(e)}"
-        })
-
-
-@router.post("/add_order")
+@router.post("")
 async def add_order(new_order: OrderCreate, session: AsyncSession = Depends(get_async_session)):
+    """
+    Добавление данных о новом заказе\n
+    :param new_order: словарь (JSON) с данными о новом заказе\n
+    :param session: \n
+    :return:
+    """
     try:
         stmt = insert(order).values(**new_order.dict())
         await session.execute(stmt)
@@ -152,30 +96,52 @@ async def add_order(new_order: OrderCreate, session: AsyncSession = Depends(get_
                 "details": f"Заказ с идентификатором {new_order.id} уже существует существует.",
             })
 
-        elif 'INSERT или UPDATE в таблице "order" нарушает ограничение внешнего ключа "order_status_id_fkey"' in str(e):
+        if 'INSERT или UPDATE в таблице "order" нарушает ограничение внешнего ключа "order_dispatcher_id_fkey"' in str(
+                e):
+            raise HTTPException(status_code=404, detail={
+                "status": "error",
+                "data": None,
+                "details": f"Диспетчера с идентификатором {new_order.dispatcher_id} не существует.",
+            })
+
+        if 'INSERT или UPDATE в таблице "order" нарушает ограничение внешнего ключа "order_driver_id_fkey"' in str(e):
+            raise HTTPException(status_code=404, detail={
+                "status": "error",
+                "data": None,
+                "details": f"Водителя с идентификатором {new_order.driver_id} не существует.",
+            })
+
+        if 'INSERT или UPDATE в таблице "order" нарушает ограничение внешнего ключа "order_status_id_fkey"' in str(e):
             raise HTTPException(status_code=404, detail={
                 "status": "error",
                 "data": None,
                 "details": f"Статуса заказа с идентификатором {new_order.status_id} не существует.",
             })
 
-        elif 'INSERT или UPDATE в таблице "order" нарушает ограничение внешнего ключа "order_user_id_fkey"' in str(e):
+        if 'INSERT или UPDATE в таблице "order" нарушает ограничение внешнего ключа "order_user_id_fkey"' in str(e):
             raise HTTPException(status_code=404, detail={
                 "status": "error",
                 "data": None,
-                "details": f"Пользователь с идентификатором {new_order.user_id} не существует.",
+                "details": f"Пользователя с идентификатором {new_order.user_id} не существует.",
             })
 
-        else:
-            raise HTTPException(status_code=500, detail={
-                "status": "error",
-                "data": None,
-                "details": f"Произошла ошибка при создании заказа: {str(e)}",
-            })
+    except Exception as e:
+        raise HTTPException(status_code=500, detail={
+            "status": "error",
+            "data": None,
+            "details": f"{str(e)}"
+        })
 
 
-@router.put("/update_order/{order_id}")
+@router.put("/{order_id}")
 async def update_order(order_id: int, updated_order: OrderUpdate, session: AsyncSession = Depends(get_async_session)):
+    """
+    Обновление данных существующего заказа\n
+    :param order_id: id заказа\n
+    :param updated_order: словарь (JSON) с новыми данными о заказе\n
+    :param session: \n
+    :return:
+    """
     try:
         query = select(order).where(order.c.id == order_id)
         result = await session.execute(query)
@@ -199,6 +165,22 @@ async def update_order(order_id: int, updated_order: OrderUpdate, session: Async
         }
 
     except IntegrityError as e:
+
+        if 'INSERT или UPDATE в таблице "order" нарушает ограничение внешнего ключа "order_dispatcher_id_fkey"' in str(
+                e):
+            raise HTTPException(status_code=404, detail={
+                "status": "error",
+                "data": None,
+                "details": f"Диспетчера с идентификатором {updated_order.dispatcher_id} не существует.",
+            })
+
+        if 'INSERT или UPDATE в таблице "order" нарушает ограничение внешнего ключа "order_driver_id_fkey"' in str(e):
+            raise HTTPException(status_code=404, detail={
+                "status": "error",
+                "data": None,
+                "details": f"Водителя с идентификатором {updated_order.driver_id} не существует.",
+            })
+
         if 'INSERT или UPDATE в таблице "order" нарушает ограничение внешнего ключа "order_status_id_fkey"' in str(e):
             raise HTTPException(status_code=404, detail={
                 "status": "error",
@@ -206,23 +188,29 @@ async def update_order(order_id: int, updated_order: OrderUpdate, session: Async
                 "details": f"Статуса заказа с идентификатором {updated_order.status_id} не существует.",
             })
 
-        elif 'INSERT или UPDATE в таблице "order" нарушает ограничение внешнего ключа "order_user_id_fkey"' in str(e):
+        if 'INSERT или UPDATE в таблице "order" нарушает ограничение внешнего ключа "order_user_id_fkey"' in str(e):
             raise HTTPException(status_code=404, detail={
                 "status": "error",
                 "data": None,
-                "details": f"Пользователь с идентификатором {updated_order.user_id} не существует.",
+                "details": f"Пользователя с идентификатором {updated_order.user_id} не существует.",
             })
 
-        else:
-            raise HTTPException(status_code=500, detail={
-                "status": "error",
-                "data": None,
-                "details": f"Произошла ошибка при обновлении заказа с идентификатором {order_id}.",
-            })
+    except Exception as e:
+        raise HTTPException(status_code=500, detail={
+            "status": "error",
+            "data": None,
+            "details": f"{str(e)}"
+        })
 
 
-@router.delete("/delete_order/{order_id}")
+@router.delete("/{order_id}")
 async def delete_order(order_id: int, session: AsyncSession = Depends(get_async_session)):
+    """
+    Удаление данных о заказе\n
+    :param order_id: id заказа\n
+    :param session: \n
+    :return:
+    """
     try:
         query = select(order).where(order.c.id == order_id)
         result = await session.execute(query)

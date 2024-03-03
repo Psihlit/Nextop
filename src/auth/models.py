@@ -1,6 +1,6 @@
 from fastapi_users_db_sqlalchemy import SQLAlchemyBaseUserTable
 from sqlalchemy import Table, Column, Integer, String, Boolean, MetaData
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.database import Base
 
@@ -20,28 +20,7 @@ user = Table(
     Column("is_verified", Boolean, default=False, nullable=False)
 )
 
-# dispatcher = Table(
-#     "dispatcher",
-#     metadata,
-#     Column("id", Integer, primary_key=True),
-#     Column("name", String, nullable=False),
-#     Column("surname", String, nullable=False),
-#     Column("email", String, nullable=False),
-#     Column("password", String, nullable=False),
-#     Column("phone_number", String, nullable=False)
-# )
-#
-# driver = Table(
-#     "driver",
-#     metadata,
-#     Column("id", Integer, primary_key=True),
-#     Column("name", String, nullable=False),
-#     Column("surname", String, nullable=False),
-#     Column("email", String, nullable=False),
-#     Column("password", String, nullable=False),
-#     Column("phone_number", String, nullable=False),
-#     Column("dispatcher_id", Integer, ForeignKey(dispatcher.c.id))
-# )
+user_orders = relationship("order", back_populates="user")
 
 
 class User(SQLAlchemyBaseUserTable[int], Base):
