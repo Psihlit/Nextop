@@ -11,7 +11,9 @@ import sys
 sys.path.append(os.path.join(sys.path[0], 'src'))
 
 from src.config import DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASS
-from src.auth.models import metadata as metadata_auth
+# from src.auth.models import metadata as metadata_auth
+from src.demo_user.models import metadata as metadata_user
+from src.tokens.models import metadata as metadata_token
 from src.orders.models import metadata as metadata_order
 from src.order_statuses.models import metadata as metadata_order_type
 from src.dispatchers.models import metadata as metadata_dispatcher
@@ -37,7 +39,9 @@ if config.config_file_name is not None:
 # for 'autogenerate' support
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
-target_metadata = [metadata_auth, metadata_order_type, metadata_dispatcher, metadata_driver, metadata_order]
+# target_metadata = [metadata_auth, metadata_order_type, metadata_dispatcher, metadata_driver, metadata_order]
+target_metadata = [metadata_user, metadata_token, metadata_order_type, metadata_dispatcher, metadata_driver,
+                   metadata_order]
 
 
 # other values from the config, defined by the needs of env.py,
