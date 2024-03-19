@@ -36,4 +36,8 @@ class UserCreate(UserSchema):
     is_verified: Optional[bool] = False
 
 
-UserAuth = UserCreate
+# UserAuth = UserCreate
+
+class UserAuth(BaseModel):
+    email: EmailStr
+    hashed_password: Optional[str] = Field(min_length=5, default="12345")

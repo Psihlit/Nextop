@@ -1,6 +1,5 @@
 from typing import Optional
 
-from asyncpg import UniqueViolationError
 from fastapi import APIRouter, Depends, HTTPException, Query
 
 from sqlalchemy import select, insert, update, delete

@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database import get_async_session
 from src.dispatchers.models import dispatcher
-from src.dispatchers.schemas import DispatcherSchema, ResponseModel, DispatcherCreate, DispatcherUpdate
+from src.dispatchers.schemas import ResponseModel, DispatcherCreate, DispatcherUpdate
 
 router = APIRouter(
     prefix='/dispatchers',

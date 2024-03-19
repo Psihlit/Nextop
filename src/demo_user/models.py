@@ -1,8 +1,6 @@
 from sqlalchemy import Table, Column, Integer, String, Boolean, MetaData
 from sqlalchemy.orm import relationship
 
-from src.database import Base
-
 metadata = MetaData()
 
 user = Table(

@@ -8,7 +8,6 @@ class DispatcherSchema(BaseModel):
     name: str
     surname: str
     email: str
-    password: str
     phone_number: str
 
 

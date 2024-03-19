@@ -1,4 +1,4 @@
-from sqlalchemy import Table, Column, Integer, String, Boolean, MetaData, ForeignKey
+from sqlalchemy import Table, Column, Integer, String, MetaData, ForeignKey
 from sqlalchemy.orm import relationship
 from src.demo_user.models import user
 

@@ -8,7 +8,6 @@ class DriverSchema(BaseModel):
     name: str
     surname: str
     email: str
-    password: str
     phone_number: str
     dispatcher_id: int
 

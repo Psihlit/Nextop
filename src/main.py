@@ -4,8 +4,6 @@ import sys
 
 sys.path.append("D:\\PycharmProjects\\Nextop")
 
-from auth.base_config import auth_backend, fastapi_users
-from auth.schemas import UserRead, UserCreate
 from orders.router import router as router_order
 from order_statuses.router import router as router_order_type
 from dispatchers.router import router as router_dispatcher

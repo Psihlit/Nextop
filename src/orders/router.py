@@ -34,8 +34,10 @@ async def get_orders_with_filtration(start: Optional[int] = Query(default=0, ge=
     """
 
     try:
+        # получаем все заказы
         query = select(order)
 
+        # фильтрация
         if order_id:
             query = query.where(order.c.id == order_id)
         if user_id:
@@ -43,9 +45,11 @@ async def get_orders_with_filtration(start: Optional[int] = Query(default=0, ge=
         if status_id:
             query = query.where(order.c.status_id == status_id)
 
+        # выборка n заказов
         result = await session.execute(query.offset(start).limit(step))
         orders = result.all()
 
+        # заказов нет
         if not orders:
             raise HTTPException(status_code=404, detail={
                 "status": "error",
@@ -53,6 +57,7 @@ async def get_orders_with_filtration(start: Optional[int] = Query(default=0, ge=
                 "details": f"Заказов по заданным критериям не найдено."
             })
 
+        # возвращаем заказы
         return {
             "status": "success",
             "status_code": "200",

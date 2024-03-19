@@ -1,7 +1,7 @@
-from typing import List, Optional, Annotated
+from typing import Optional, Annotated
 
 from fastapi import APIRouter, Depends, Query, HTTPException
-from sqlalchemy import select, insert, column
+from sqlalchemy import select, insert
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.status import HTTP_400_BAD_REQUEST, HTTP_401_UNAUTHORIZED
@@ -11,7 +11,8 @@ from src.demo_user.models import user
 from src.tokens.models import token
 from src.demo_user.schemas import ResponseModel, UserCreate
 from src.secure import pwd_context, apikey_scheme
-from src.tokens.schemas import Token
+
+from src.auth_mail.checkMail import send_email
 
 router = APIRouter(
     prefix='/users',
@@ -82,6 +83,11 @@ async def add_user(new_user: UserCreate, session: AsyncSession = Depends(get_asy
         stmt = insert(user).values(**new_user_model.dict())
         await session.execute(stmt)
         await session.commit()
+
+        message = "Добро пожаловать!"
+
+        await send_email(new_user_model.email)
+
         return {
             "status": "success",
             "status_code": "200",
@@ -118,7 +124,7 @@ async def get_info_about_authorize_user(access_token: Annotated[str, Depends(api
     try:
         query = select(token).where(token.c.access_token == access_token)
         result = await session.execute(query)
-        existing_token = result.first() # находим id пользователя по access токену
+        existing_token = result.first()  # находим id пользователя по access токену
 
         if not existing_token:
             raise HTTPException(
